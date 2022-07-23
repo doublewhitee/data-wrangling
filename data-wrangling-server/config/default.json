@@ -1,0 +1,6 @@
+{
+  "port": 5050,
+  "host": "127.0.0.1",
+  "url": "mongodb://localhost:27017/data-wrangling",
+  "secret_key": "kH6rAJ0mOpIC7VXT"
+}
