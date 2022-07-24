@@ -81,7 +81,7 @@ const Login: React.FC = () => {
     setLoading(true)
     const res = await reqRegister(data.firstName, data.lastName, data.email, encryptAES(data.password))
     if (res && res.code === 200) {
-      message.success('Registration Successful!')
+      message.success('Registration successful!')
       // go to login page
       setState('login')
     } else {

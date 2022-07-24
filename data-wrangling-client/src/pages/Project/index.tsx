@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -7,51 +7,159 @@ import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
-import TableContainer from '@material-ui/core/TableContainer';
-import Table from '@material-ui/core/Table';
-import TableHead from '@material-ui/core/TableHead';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableRow from '@material-ui/core/TableRow';
-import Link from '@material-ui/core/Link';
-import IconButton from '@material-ui/core/IconButton';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import CreateNewFolderOutlinedIcon from '@material-ui/icons/CreateNewFolderOutlined';
-import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
+
+import { useAppSelector } from '../../redux/hooks';
+import message from '../../components/Message';
+import { reqProjectList, reqCreateProject, reqEditProject, reqDeleteProject } from '../../api/project';
+import Empty from '../../components/Empty';
+import ProjectTable from './ProjectTable';
+
+interface projectRow {
+  _id: string,
+  name: string,
+  update_at: Date,
+  desc: string,
+  user_info: {
+    first_name: string,
+    last_name: string,
+    email: string
+  }
+}
 
 const useStyles = makeStyles((theme) => ({
   topBar: {
     marginBottom: theme.spacing(2)
   },
-  projectLink: {
-    cursor: 'pointer',
+  circularProgress: {
+    marginRight: theme.spacing(2),
   },
 }));
 
-const rows = [
-  { name: 'project 1', createdBy: 'Zhuo Chen', contains: '3 Datasets', updated: '2022-7-20' },
-  { name: 'project 2', createdBy: 'Zhuo Chen', contains: '2 Datasets', updated: '2022-7-22' }
-]
-
 const Project: React.FC = () => {
   const classes = useStyles()
-  const [tabValue, setTabValue] = useState('update')
+  const user = useAppSelector((state) => state.user._id)
+  const [tabValue, setTabValue] = useState('update_at')
+  // project list
+  const [projectList, setProjectList] = useState<projectRow[]>([])
+  // creat / rename dialog
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [dialogTitle, setDialogTitle] = useState('')
+  // dialogLoading
+  const [dialogLoading, setDialogLoading] = useState(false)
+  // dialog form
+  const [projectForm, setProjectForm] = useState({
+    _id: '',
+    name: '',
+    desc: ''
+  })
+  const [formState, setFormState] = useState({
+    name: { error: false, helperText: '' },
+  })
+  // current row
+  const [currentRow, setCurrentRow] = useState<projectRow>()
+
+  useEffect(() => {
+    if (user !== '') {
+      handleReqProjectList()
+    }
+  }, [user, tabValue])
+
+  // get project list
+  const handleReqProjectList = async () => {
+    const res = await reqProjectList(user, 1, tabValue)
+    if (res && res.code === 200) {
+      setProjectList([...res.data])
+    } else {
+      message.error(res.message)
+    }
+  }
 
   const handleTabChange = (event: React.ChangeEvent<{}>, newValue: string) => {
     setTabValue(newValue)
   }
 
-  const handleCreateProject = () => {
+  // project name
+  const handleChangeName = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setProjectForm(val => ({ ...val, name: event.target.value }))
+    if (formState.name.error && event.target.value.trim().length > 0) {
+      setFormState(val => ({ ...val, name: {error: false, helperText: ''} }))
+    }
+  }
+
+  const handleValidName = () => {
+    if (projectForm.name.trim().length === 0) {
+      setFormState(val => ({ ...val, name: {error: true, helperText: 'Project name is required.'} }))
+      return false
+    }
+    return true
+  }
+
+  // project desc
+  const handleChangeDesc = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setProjectForm(val => ({ ...val, desc: event.target.value }))
+  }
+
+  // show dialog
+  const handleProject = (type: string) => {
+    if (type === 'create') {
+      setDialogTitle('Create Project')
+      setProjectForm({ _id: '', name: '', desc: '' })
+    } else {
+      setDialogTitle('Edit Project')
+      setProjectForm({ _id: currentRow!._id, name: currentRow!.name, desc: currentRow!.desc })
+    }
+    setFormState({ name: { error: false, helperText: '' }})
     setIsDialogOpen(true)
   }
 
+  // close dialog
   const handleCloseDiaglog = () => {
     setIsDialogOpen(false)
+  }
+
+  // save dialog
+  const handleSaveDiaglog = async () => {
+    if (handleValidName()) {
+      setDialogLoading(true)
+      if (dialogTitle === 'Create Project') {
+        const res = await reqCreateProject(projectForm.name, projectForm.desc, user)
+        if (res && res.code === 200) {
+          message.success('Create project Successful!')
+          setIsDialogOpen(false)
+          handleReqProjectList()
+        } else {
+          message.error(res.message)
+        }
+      } else if (dialogTitle === 'Edit Project') {
+        const res = await reqEditProject(projectForm._id, projectForm.name, projectForm.desc)
+        if (res && res.code === 200) {
+          message.success('Edit project Successful!')
+          setIsDialogOpen(false)
+          handleReqProjectList()
+        } else {
+          message.error(res.message)
+        }
+      }
+      setDialogLoading(false)
+    }
+  }
+
+  // delete project
+  const handleDeleteProject = async () => {
+    const res = await reqDeleteProject(currentRow!._id)
+    if (res && res.code === 200) {
+      message.success('Delete project Successful!')
+      handleReqProjectList()
+    } else {
+      message.error(res.message)
+    }
   }
 
   return (
@@ -69,7 +177,7 @@ const Project: React.FC = () => {
               size="medium"
               color="primary"
               startIcon={<CreateNewFolderOutlinedIcon />}
-              onClick={handleCreateProject}
+              onClick={() => handleProject('create')}
             >
               Create
             </Button>
@@ -86,59 +194,60 @@ const Project: React.FC = () => {
       </Grid>
 
       <Tabs value={tabValue} onChange={handleTabChange} indicatorColor="primary">
-        <Tab label="Latest Update" value="update" />
+        <Tab label="Latest Update" value="update_at" />
         <Tab label="Project Name" value="name" />
       </Tabs>
 
-      <TableContainer>
-        <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Project Name</TableCell>
-            <TableCell>Created By</TableCell>
-            <TableCell>Contains</TableCell>
-            <TableCell>Last Updated</TableCell>
-            <TableCell>Action</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.map(row => (
-            <TableRow key={row.name} hover>
-              <TableCell><Link className={classes.projectLink}>{row.name}</Link></TableCell>
-              <TableCell>{row.createdBy}</TableCell>
-              <TableCell>{row.contains}</TableCell>
-              <TableCell>{row.updated}</TableCell>
-              <TableCell><IconButton size="small"><MoreHorizIcon /></IconButton></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-        </Table>
-      </TableContainer>
+      {
+        projectList.length > 0 ?
+        <ProjectTable
+          projectList={projectList}
+          handleSetRow={setCurrentRow}
+          handleRenameProject={() => handleProject('edit')}
+          handleDeleteProject={handleDeleteProject}
+        /> :
+        <Empty />
+      }
 
       <Dialog onClose={handleCloseDiaglog} open={isDialogOpen}>
         <DialogTitle>
-          Create Project
+          {dialogTitle}
         </DialogTitle>
         <DialogContent dividers>
           <Typography gutterBottom>
-            Cras mattis consectetur purus sit amet fermentum. Cras justo odio, dapibus ac facilisis
-            in, egestas eget quam. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.
+            Please enter a project name and description (optional).
           </Typography>
           <Typography gutterBottom>
-            Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Vivamus sagittis
-            lacus vel augue laoreet rutrum faucibus dolor auctor.
+            <TextField
+              margin="dense"
+              label="Project Name"
+              fullWidth
+              required
+              value={projectForm.name}
+              error={formState.name.error}
+              helperText={formState.name.helperText}
+              onChange={handleChangeName}
+              onBlur={handleValidName}
+            />
           </Typography>
           <Typography gutterBottom>
-            Aenean lacinia bibendum nulla sed consectetur. Praesent commodo cursus magna, vel
-            scelerisque nisl consectetur et. Donec sed odio dui. Donec ullamcorper nulla non metus
-            auctor fringilla.
+            <TextField
+              margin="dense"
+              label="Project Description"
+              multiline
+              maxRows={4}
+              fullWidth
+              value={projectForm.desc}
+              onChange={handleChangeDesc}
+            />
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDiaglog} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleCloseDiaglog} color="primary">
+          <Button onClick={handleSaveDiaglog} color="primary" disabled={dialogLoading}>
+            {dialogLoading && <CircularProgress className={classes.circularProgress} size={15} />}
             Save
           </Button>
         </DialogActions>
