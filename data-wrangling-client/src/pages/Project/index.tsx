@@ -14,8 +14,14 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 import Link from '@material-ui/core/Link';
+import IconButton from '@material-ui/core/IconButton';
+import Dialog from '@material-ui/core/Dialog';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogActions from '@material-ui/core/DialogActions';
 
 import CreateNewFolderOutlinedIcon from '@material-ui/icons/CreateNewFolderOutlined';
+import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
 
 const useStyles = makeStyles((theme) => ({
   topBar: {
@@ -23,7 +29,7 @@ const useStyles = makeStyles((theme) => ({
   },
   projectLink: {
     cursor: 'pointer',
-  }
+  },
 }));
 
 const rows = [
@@ -34,9 +40,18 @@ const rows = [
 const Project: React.FC = () => {
   const classes = useStyles()
   const [tabValue, setTabValue] = useState('update')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const handleTabChange = (event: React.ChangeEvent<{}>, newValue: string) => {
     setTabValue(newValue)
+  }
+
+  const handleCreateProject = () => {
+    setIsDialogOpen(true)
+  }
+
+  const handleCloseDiaglog = () => {
+    setIsDialogOpen(false)
   }
 
   return (
@@ -54,6 +69,7 @@ const Project: React.FC = () => {
               size="medium"
               color="primary"
               startIcon={<CreateNewFolderOutlinedIcon />}
+              onClick={handleCreateProject}
             >
               Create
             </Button>
@@ -82,20 +98,51 @@ const Project: React.FC = () => {
             <TableCell>Created By</TableCell>
             <TableCell>Contains</TableCell>
             <TableCell>Last Updated</TableCell>
+            <TableCell>Action</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {rows.map(row => (
-            <TableRow key={row.name}>
+            <TableRow key={row.name} hover>
               <TableCell><Link className={classes.projectLink}>{row.name}</Link></TableCell>
               <TableCell>{row.createdBy}</TableCell>
               <TableCell>{row.contains}</TableCell>
               <TableCell>{row.updated}</TableCell>
+              <TableCell><IconButton size="small"><MoreHorizIcon /></IconButton></TableCell>
             </TableRow>
           ))}
         </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog onClose={handleCloseDiaglog} open={isDialogOpen}>
+        <DialogTitle>
+          Create Project
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography gutterBottom>
+            Cras mattis consectetur purus sit amet fermentum. Cras justo odio, dapibus ac facilisis
+            in, egestas eget quam. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.
+          </Typography>
+          <Typography gutterBottom>
+            Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Vivamus sagittis
+            lacus vel augue laoreet rutrum faucibus dolor auctor.
+          </Typography>
+          <Typography gutterBottom>
+            Aenean lacinia bibendum nulla sed consectetur. Praesent commodo cursus magna, vel
+            scelerisque nisl consectetur et. Donec sed odio dui. Donec ullamcorper nulla non metus
+            auctor fringilla.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDiaglog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleCloseDiaglog} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import Container from '@material-ui/core/Container';
 import { deepOrange } from '@material-ui/core/colors';
 
 import Project from '../Project';
+import { useAppSelector } from '../../redux/hooks';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -41,6 +42,7 @@ const useStyles = makeStyles((theme) => ({
 
 const Layout: React.FC = () => {
   const classes = useStyles()
+  const user = useAppSelector((state) => state.user)
 
   return (
     <div className={classes.root}>
@@ -50,7 +52,10 @@ const Layout: React.FC = () => {
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             Data Wrangling
           </Typography>
-          <Avatar className={classes.avatar}>TE</Avatar>
+          <Avatar className={classes.avatar}>
+            {user.first_name ? user.first_name[0].toUpperCase() : 'A'}
+            {user.last_name ? user.last_name[0].toUpperCase() : 'A'}
+          </Avatar>
         </Toolbar>
       </AppBar>
 
@@ -59,6 +64,7 @@ const Layout: React.FC = () => {
         <Container maxWidth="lg" className={classes.container}>
           <Routes>
             <Route path="project" element={<Project />} />
+            <Route path="/" element={<Navigate to="/project" replace />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>
         </Container>
