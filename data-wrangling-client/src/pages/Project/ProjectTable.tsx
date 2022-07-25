@@ -34,9 +34,10 @@ interface projectRow {
 
 interface projectTableProps {
   projectList: projectRow[],
+  handleClickLink: (row: projectRow) => void,
   handleSetRow: (row: projectRow) => void,
   handleRenameProject: () => void,
-  handleDeleteProject: () => void
+  handleDeleteProject: () => void,
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -47,7 +48,13 @@ const useStyles = makeStyles((theme) => ({
 
 const ProjectTable: React.FC<projectTableProps> = props => {
   const classes = useStyles()
-  const { projectList, handleSetRow, handleRenameProject, handleDeleteProject } = props
+  const {
+    projectList,
+    handleClickLink,
+    handleSetRow,
+    handleRenameProject,
+    handleDeleteProject
+  } = props
   // popover state
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const popoverOpen = Boolean(anchorEl)
@@ -86,7 +93,11 @@ const ProjectTable: React.FC<projectTableProps> = props => {
         <TableBody>
           {projectList.map(row => (
             <TableRow key={row._id} hover>
-              <TableCell><Link className={classes.projectLink}>{row.name}</Link></TableCell>
+              <TableCell>
+                <Link className={classes.projectLink} onClick={() => handleClickLink(row)}>
+                  {row.name}
+                </Link>
+              </TableCell>
               <TableCell>{`${row.user_info.first_name} ${row.user_info.last_name}`}</TableCell>
               <TableCell>0 Datasets</TableCell>
               <TableCell>{formatDate(row.update_at)}</TableCell>

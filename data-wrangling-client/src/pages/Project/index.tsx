@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -12,6 +13,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Container from '@material-ui/core/Container';
 
 import CreateNewFolderOutlinedIcon from '@material-ui/icons/CreateNewFolderOutlined';
 
@@ -40,11 +42,16 @@ const useStyles = makeStyles((theme) => ({
   circularProgress: {
     marginRight: theme.spacing(2),
   },
+  container: {
+    paddingTop: theme.spacing(4),
+    paddingBottom: theme.spacing(4),
+  },
 }));
 
 const Project: React.FC = () => {
   const classes = useStyles()
   const user = useAppSelector((state) => state.user._id)
+  const navigate = useNavigate()
   const [tabValue, setTabValue] = useState('update_at')
   // project list
   const [projectList, setProjectList] = useState<projectRow[]>([])
@@ -162,8 +169,13 @@ const Project: React.FC = () => {
     }
   }
 
+  // navigate to detail page
+  const handleNavToDetailPage = (row: projectRow) => {
+    navigate(`/detail/${row._id}`)
+  }
+
   return (
-    <div>
+    <Container maxWidth="lg" className={classes.container}>
       <Grid container justifyContent="space-between" alignItems="center" className={classes.topBar}>
         <Grid item xs={12} sm={3}>
           <Typography variant="h6" color="inherit" noWrap>
@@ -202,6 +214,7 @@ const Project: React.FC = () => {
         projectList.length > 0 ?
         <ProjectTable
           projectList={projectList}
+          handleClickLink={handleNavToDetailPage}
           handleSetRow={setCurrentRow}
           handleRenameProject={() => handleProject('edit')}
           handleDeleteProject={handleDeleteProject}
@@ -252,7 +265,7 @@ const Project: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Container>
   );
 };
 

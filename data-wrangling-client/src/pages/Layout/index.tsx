@@ -8,7 +8,6 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
-import Container from '@material-ui/core/Container';
 import Popover from '@material-ui/core/Popover';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -20,6 +19,8 @@ import { deepOrange } from '@material-ui/core/colors';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
 import Project from '../Project';
+import Detail from '../Detail';
+import WorkSpace from '../WorkSpace';
 import Confirm from '../../components/Confirm';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import { clearUserInfo } from '../../redux/reducers/userSlice';
@@ -45,10 +46,6 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
     height: '100vh',
     overflow: 'auto',
-  },
-  container: {
-    paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
   },
   popoverName: {
     fontWeight: 'bold',
@@ -106,13 +103,15 @@ const Layout: React.FC = () => {
 
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
-        <Container maxWidth="lg" className={classes.container}>
+        <div>
           <Routes>
             <Route path="project" element={<Project />} />
+            <Route path="detail/:projectId" element={<Detail />} />
+            <Route path="table/:datasetId" element={<WorkSpace />} />
             <Route path="/" element={<Navigate to="/project" replace />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>
-        </Container>
+        </div>
       </main>
 
       <Popover
