@@ -15,4 +15,7 @@ router.post('/delete', project_controller.delete)
 // req project list
 router.post('/list', project_controller.list)
 
+// req project detail
+router.post('/detail', project_controller.detail)
+
 module.exports = router
