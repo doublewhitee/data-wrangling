@@ -14,6 +14,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Container from '@material-ui/core/Container';
+import Pagination from '@material-ui/lab/Pagination';
 
 import CreateNewFolderOutlinedIcon from '@material-ui/icons/CreateNewFolderOutlined';
 
@@ -32,7 +33,8 @@ interface projectRow {
     first_name: string,
     last_name: string,
     email: string
-  }
+  },
+  contains: number
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -46,6 +48,11 @@ const useStyles = makeStyles((theme) => ({
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
   },
+  pagination: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: theme.spacing(2),
+  }
 }));
 
 const Project: React.FC = () => {
@@ -71,18 +78,33 @@ const Project: React.FC = () => {
   })
   // current row
   const [currentRow, setCurrentRow] = useState<projectRow>()
+  // search text
+  const [searchText, setSearchText] = useState('')
+  // pages count
+  const [pagesCount, setPagesCount] = useState(1)
+  // current page
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     if (user !== '') {
       handleReqProjectList()
     }
-  }, [user, tabValue])
+  }, [user, tabValue, currentPage])
+
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    } else if (user !== '') {
+      handleReqProjectList()
+    }
+  }, [searchText])
 
   // get project list
   const handleReqProjectList = async () => {
-    const res = await reqProjectList(user, 1, tabValue)
+    const res = await reqProjectList(user, currentPage, tabValue, searchText)
     if (res && res.code === 200) {
       setProjectList([...res.data])
+      setPagesCount(Math.ceil(res.total / 5))
     } else {
       message.error(res.message)
     }
@@ -138,7 +160,7 @@ const Project: React.FC = () => {
       if (dialogTitle === 'Create Project') {
         const res = await reqCreateProject(projectForm.name, projectForm.desc, user)
         if (res && res.code === 200) {
-          message.success('Create project Successful!')
+          message.success('Create project successful!')
           setIsDialogOpen(false)
           handleReqProjectList()
         } else {
@@ -200,6 +222,8 @@ const Project: React.FC = () => {
               variant="outlined"
               placeholder="Search"
               size="small"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
             />
           </Grid>
         </Grid>
@@ -212,17 +236,22 @@ const Project: React.FC = () => {
 
       {
         projectList.length > 0 ?
-        <ProjectTable
-          projectList={projectList}
-          handleClickLink={handleNavToDetailPage}
-          handleSetRow={setCurrentRow}
-          handleRenameProject={() => handleProject('edit')}
-          handleDeleteProject={handleDeleteProject}
-        /> :
+        <div>
+          <ProjectTable
+            projectList={projectList}
+            handleClickLink={handleNavToDetailPage}
+            handleSetRow={setCurrentRow}
+            handleRenameProject={() => handleProject('edit')}
+            handleDeleteProject={handleDeleteProject}
+          />
+          <div className={classes.pagination}>
+            <Pagination count={pagesCount} page={currentPage} onChange={(_, val) => setCurrentPage(val)} />
+          </div>
+        </div> :
         <Empty />
       }
 
-      <Dialog onClose={handleCloseDiaglog} open={isDialogOpen}>
+      <Dialog onClose={handleCloseDiaglog} open={isDialogOpen} fullWidth maxWidth="sm">
         <DialogTitle>
           {dialogTitle}
         </DialogTitle>

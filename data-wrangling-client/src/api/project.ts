@@ -1,10 +1,18 @@
 import { request } from './request';
 
-export function reqProjectList(user_id: string, page: number, sort: string) {
+export function reqProjectList(user_id: string, page: number, sort: string, search: string) {
   return request({
     url: '/project/list',
     method: 'post',
-    data: { user_id, page, sort }
+    data: { user_id, page, sort, search }
+  }) as any
+}
+
+export function reqProjectDetail(_id: string) {
+  return request({
+    url: '/project/detail',
+    method: 'post',
+    data: { _id }
   }) as any
 }
 

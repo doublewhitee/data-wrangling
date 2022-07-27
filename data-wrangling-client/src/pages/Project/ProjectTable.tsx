@@ -29,7 +29,8 @@ interface projectRow {
     first_name: string,
     last_name: string,
     email: string
-  }
+  },
+  contains: number
 }
 
 interface projectTableProps {
@@ -99,7 +100,7 @@ const ProjectTable: React.FC<projectTableProps> = props => {
                 </Link>
               </TableCell>
               <TableCell>{`${row.user_info.first_name} ${row.user_info.last_name}`}</TableCell>
-              <TableCell>0 Datasets</TableCell>
+              <TableCell>{`${row.contains} Datasets`}</TableCell>
               <TableCell>{formatDate(row.update_at)}</TableCell>
               <TableCell>
                 <IconButton size="small" onClick={(e) => handleShowMore(e, row)}>

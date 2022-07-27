@@ -1,4 +1,7 @@
 const mongoose = require('mongoose')
+const fs = require('fs')
+const csv = require('csv-parser')
+const xlsx = require('xlsx')
 
 const DatasetModel = require('../models/dataset')
 const RowModel = require('../models/row')
@@ -38,7 +41,8 @@ module.exports.create = async (ctx) => {
       project: project_id,
       user: user_id,
       dataset: dataset._id,
-      action: 'Create',
+      type: 'Create',
+      action: 'Create Table',
     })
     // update project update time
     await ProjectModel.findByIdAndUpdate(project_id, { update_at: new Date() })
@@ -50,6 +54,104 @@ module.exports.create = async (ctx) => {
     ctx.body = {
       code: 500,
       message: 'Request error!'
+    }
+  }
+}
+
+// import dataset
+module.exports.import = async (ctx) => {
+  try {
+    const { file } = ctx.request.files
+    const { project_id, user_id } = ctx.request.query
+    let fileName = file.originalFilename.split('.')
+    const format = fileName.pop().toLocaleLowerCase()
+    fileName = fileName.join('')
+    if (format !== 'csv' && format !== 'xlsx') {
+      ctx.body = {
+        code: 501,
+        data: 'File format not supported!'
+      }
+    } else if (format === 'csv') {
+      const reader = fs.createReadStream(file.filepath)
+      const rows = []
+      const cols = new Set()
+      const columns = []
+      reader.pipe(csv())
+            .on('data', data => {
+              Object.keys(data).map(i => {
+                cols.add(i)
+              })
+              rows.push({ project: project_id, row: data })
+            })
+            .on('end', async () => {
+              // get columns
+              Array.from(cols.keys()).forEach(col => {
+                columns.push({ name: col, datatype: 'string' })
+              })
+              // create dataset
+              const dataset = await DatasetModel.create({
+                name: fileName,
+                project: project_id,
+                create_by: user_id,
+                columns
+              })
+              // create rows
+              rows.forEach(row => row.dataset = dataset._id)
+              await RowModel.insertMany(rows)
+              // add history
+              await HistoryModel.create({
+                project: project_id,
+                user: user_id,
+                dataset: dataset._id,
+                type: 'Create',
+                action: 'Create Table',
+              })
+              // update project update time
+              await ProjectModel.findByIdAndUpdate(project_id, { update_at: new Date() })
+            })
+    } else if (format === 'xlsx') {
+      const workbook = xlsx.readFile(file.filepath)
+      sheetNames = workbook.SheetNames
+      const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetNames[0]])
+      const rows = []
+      const cols = new Set()
+      const columns = []
+      data.forEach(row => {
+        Object.keys(row).forEach(k => cols.add(k))
+      })
+      // get columns
+      Array.from(cols.keys()).forEach(col => {
+        columns.push({ name: col, datatype: 'string' })
+      })
+      // create dataset
+      const dataset = await DatasetModel.create({
+        name: fileName,
+        project: project_id,
+        create_by: user_id,
+        columns
+      })
+      // create rows
+      data.forEach(row => rows.push({ dataset: dataset._id, project: project_id, row }))
+      await RowModel.insertMany(rows)
+      // add history
+      await HistoryModel.create({
+        project: project_id,
+        user: user_id,
+        dataset: dataset._id,
+        type: 'Create',
+        action: 'Create Table',
+      })
+      // update project update time
+      await ProjectModel.findByIdAndUpdate(project_id, { update_at: new Date() })
+    }
+    ctx.body = {
+      code: 200,
+      data: 'Import dataset successful!'
+    }
+  } catch (e) {
+    ctx.body = {
+      code: 500,
+      message: 'Upload fail!'
     }
   }
 }
@@ -74,14 +176,14 @@ module.exports.edit = async (ctx) => {
 // delete dataset
 module.exports.delete = async (ctx) => {
   try {
-    const { _id } = ctx.request.body
+    const { _id, project_id } = ctx.request.body
     await DatasetModel.findByIdAndDelete(_id)
     await RowModel.deleteMany({ dataset: _id })
     await HistoryModel.deleteMany({ dataset: _id })
     await ProjectModel.findByIdAndUpdate(project_id, { update_at: new Date() })
     ctx.body = {
       code: 200,
-      data: dataset._id
+      data: 'Delete dataset successful!'
     }
   } catch (e) {
     ctx.body = {

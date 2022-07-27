@@ -17,19 +17,33 @@ import Divider from '@material-ui/core/Divider';
 
 import datasetImg from '../../assets/dataset.png';
 
+import Confirm from '../../components/Confirm';
+
 interface dataset {
   _id: string,
-  name: string
+  name: string,
+  columns: {
+    _id: string,
+    name: string,
+    datatype: string,
+  }[],
+  user_info: {
+    _id: string,
+    first_name: string,
+    last_name: string
+  },
+  create_at: Date,
+  update_at: Date
 }
 
 interface datasetProps {
-  handleClickActionArea: (dataset: dataset) => void
+  datasets: dataset[],
+  handleClickActionArea: (dataset: dataset) => void,
+  handleSetDataset: (dataset: dataset) => void,
+  handleRename: () => void,
+  handleDelete: () => void,
+  handleDetail: () => void,
 }
-
-const datasets = [
-  { _id: '1', name: 'aaaa' },
-  { _id: '2', name: 'bbbb' },
-]
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -41,18 +55,44 @@ const useStyles = makeStyles((theme) => ({
   media: {
     height: 120,
   },
+  title: {
+    fontWeight: 'bold',
+    marginBottom: -theme.spacing(2)
+  }
 }));
 
 const Dataset: React.FC<datasetProps> = props => {
   const classes = useStyles()
-  const { handleClickActionArea } = props
+  const {
+    datasets,
+    handleClickActionArea,
+    handleSetDataset,
+    handleRename,
+    handleDelete,
+    handleDetail
+  } = props
   // popover state
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const popoverOpen = Boolean(anchorEl)
+  // confirm dialog
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   // click more button, show popover
   const handleClickMoreBtn = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
+  }
+
+  // click rename button
+  const handleClickRename = () => {
+    setAnchorEl(null)
+    handleRename()
+  }
+
+  // confirm delete
+  const handleConfirmDelete = () => {
+    setAnchorEl(null)
+    handleDelete()
+    setIsDialogOpen(false)
   }
 
   return (
@@ -65,18 +105,18 @@ const Dataset: React.FC<datasetProps> = props => {
                 <CardMedia
                   className={classes.media}
                   image={datasetImg}
-                  title="Contemplative Reptile"
+                  title="Dataset"
                 />
                 <CardContent>
-                  <Typography gutterBottom variant="subtitle1" noWrap>
+                  <Typography gutterBottom variant="subtitle1" className={classes.title} noWrap>
                     {item.name}
                   </Typography>
                 </CardContent>
               </CardActionArea>
-              <CardActions>
+              <CardActions onClick={() => handleSetDataset(item)}>
                 <Grid container className={classes.btnBar}>
                   <Grid item xs={6}>
-                    <Button size="small" color="primary">
+                    <Button size="small" color="primary" onClick={handleDetail}>
                       Detail
                     </Button>
                   </Grid>
@@ -107,7 +147,7 @@ const Dataset: React.FC<datasetProps> = props => {
       >
         <List dense>
           <ListItem button>
-            <ListItemText primary="Rename Dataset" />
+            <ListItemText primary="Rename Dataset" onClick={handleClickRename} />
           </ListItem>
           <Divider />
           <ListItem button>
@@ -128,10 +168,17 @@ const Dataset: React.FC<datasetProps> = props => {
           </ListItem>
           <Divider />
           <ListItem button>
-            <ListItemText primary="Delete" />
+            <ListItemText primary="Delete" onClick={() => setIsDialogOpen(true)} />
           </ListItem>
         </List>
       </Popover>
+
+      <Confirm
+        isDialogOpen={isDialogOpen}
+        content={'Are you sure to delete this dataset?'}
+        handleClose={() => setIsDialogOpen(false)}
+        handleConfirm={handleConfirmDelete}
+      />
     </Fragment>
   );
 };

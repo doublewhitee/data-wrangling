@@ -12,10 +12,12 @@
     "blueimp-md5": "^2.19.0",
     "config": "^3.3.7",
     "crypto-js": "^4.1.1",
+    "csv-parser": "^3.0.0",
     "csvtojson": "^2.0.10",
     "debug": "^4.1.1",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.7.0",
+    "koa-body": "^5.0.0",
     "koa-bodyparser": "^4.2.1",
     "koa-convert": "^1.2.0",
     "koa-json": "^2.0.2",
@@ -26,7 +28,8 @@
     "koa-views": "^6.2.0",
     "koa2-cors": "^2.0.6",
     "mongoose": "^6.3.0",
-    "pug": "^2.0.3"
+    "pug": "^2.0.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^1.19.1"
