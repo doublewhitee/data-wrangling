@@ -13,6 +13,7 @@ import { formatDate } from '../../utils/time';
 interface dataset {
   _id: string,
   name: string,
+  rows: number,
   columns: {
     _id: string,
     name: string,
@@ -66,6 +67,8 @@ const DetailDialog: React.FC<uploadDialogProps> = props => {
               <Grid item xs={6}>{`${dataset.user_info.first_name} ${dataset.user_info.last_name}`}</Grid>
               <Grid item xs={6} className={classes.title}>Columns</Grid>
               <Grid item xs={6}>{dataset.columns.length}</Grid>
+              <Grid item xs={6} className={classes.title}>Rows</Grid>
+              <Grid item xs={6}>{dataset.rows}</Grid>
               <Grid item xs={6} className={classes.title}>Create At</Grid>
               <Grid item xs={6}>{formatDate(dataset.create_at, 'yyyy-MM-dd mm:ss')}</Grid>
               <Grid item xs={6} className={classes.title}>Update At</Grid>

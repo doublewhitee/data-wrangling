@@ -23,17 +23,22 @@ module.exports.create = async (ctx) => {
         { name: 'Value', datatype: 'number' }
       ]
     })
+    // get columns
+    const cols = {}
+    dataset.columns.map(i => {
+      cols[i.name] = i._id
+    })
     // add rows
     await RowModel.insertMany([
       {
         dataset: dataset._id,
         project: project_id,
-        row: { Id: 'a', Item: 'A', Value: 10 }
+        row: { [cols.Id]: 'a', [cols.Item]: 'A', [cols.Value]: 10 }
       },
       {
         dataset: dataset._id,
         project: project_id,
-        row: { Id: 'b', Item: 'B', Value: 20 }
+        row: { [cols.Id]: 'b', [cols.Item]: 'B', [cols.Value]: 20 }
       },
     ])
     // add history
@@ -76,12 +81,14 @@ module.exports.import = async (ctx) => {
       const rows = []
       const cols = new Set()
       const columns = []
+      const colsMap = {} // cols map
+      const rowsData = [] // rearrange rows
       reader.pipe(csv())
             .on('data', data => {
               Object.keys(data).map(i => {
                 cols.add(i)
               })
-              rows.push({ project: project_id, row: data })
+              rows.push(data)
             })
             .on('end', async () => {
               // get columns
@@ -95,9 +102,19 @@ module.exports.import = async (ctx) => {
                 create_by: user_id,
                 columns
               })
-              // create rows
-              rows.forEach(row => row.dataset = dataset._id)
-              await RowModel.insertMany(rows)
+              // columns map
+              dataset.columns.map(i => {
+                colsMap[i.name] = i._id
+              })
+              // rearrange rows
+              rows.map(i => {
+                const temp = {}
+                Object.keys(i).map(key => {
+                  temp[colsMap[key]] = i[key]
+                })
+                rowsData.push({ dataset: dataset._id, project: project_id, row: temp })
+              })
+              await RowModel.insertMany(rowsData)
               // add history
               await HistoryModel.create({
                 project: project_id,
@@ -113,9 +130,10 @@ module.exports.import = async (ctx) => {
       const workbook = xlsx.readFile(file.filepath)
       sheetNames = workbook.SheetNames
       const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetNames[0]])
-      const rows = []
       const cols = new Set()
       const columns = []
+      const colsMap = {} // cols map
+      const rowsData = [] // rearrange rows
       data.forEach(row => {
         Object.keys(row).forEach(k => cols.add(k))
       })
@@ -130,9 +148,19 @@ module.exports.import = async (ctx) => {
         create_by: user_id,
         columns
       })
-      // create rows
-      data.forEach(row => rows.push({ dataset: dataset._id, project: project_id, row }))
-      await RowModel.insertMany(rows)
+      // columns map
+      dataset.columns.map(i => {
+        colsMap[i.name] = i._id
+      })
+      // rearrange rows
+      data.map(i => {
+        const temp = {}
+        Object.keys(i).map(key => {
+          temp[colsMap[key]] = i[key]
+        })
+        rowsData.push({ dataset: dataset._id, project: project_id, row: temp })
+      })
+      await RowModel.insertMany(rowsData)
       // add history
       await HistoryModel.create({
         project: project_id,
@@ -230,7 +258,7 @@ module.exports.detail = async (ctx) => {
         let: { dataset_id: '$_id' },
         pipeline: [
           { $match: { '$expr': { '$eq': ['$dataset', '$$dataset_id'] } } },
-          { $sort: { 'update_at': -1 } }
+          { $sort: { 'update_at': 1 } }
         ],
         as: 'rows'
       } },

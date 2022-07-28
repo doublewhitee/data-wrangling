@@ -22,6 +22,7 @@ import Confirm from '../../components/Confirm';
 interface dataset {
   _id: string,
   name: string,
+  rows: number,
   columns: {
     _id: string,
     name: string,

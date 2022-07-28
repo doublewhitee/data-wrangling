@@ -31,6 +31,7 @@ import DetailDialog from './DetailDialog';
 interface dataset {
   _id: string,
   name: string,
+  rows: number,
   columns: {
     _id: string,
     name: string,
@@ -87,7 +88,7 @@ const Detail: React.FC = () => {
     desc: 'Description'
   })
   // dataset list
-  const [datasetList, setDatasetList] = useState()
+  const [datasetList, setDatasetList] = useState<dataset[]>()
   // current dataset
   const [currentDataset, setCurrentDataset] = useState<dataset>()
   // creat / rename dialog
@@ -258,7 +259,7 @@ const Detail: React.FC = () => {
       </Grid>
 
       {
-        datasetList ?
+        datasetList && datasetList.length > 0 ?
         <Dataset
           datasets={datasetList}
           handleSetDataset={setCurrentDataset}
