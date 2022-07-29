@@ -258,7 +258,7 @@ module.exports.detail = async (ctx) => {
         let: { dataset_id: '$_id' },
         pipeline: [
           { $match: { '$expr': { '$eq': ['$dataset', '$$dataset_id'] } } },
-          { $sort: { 'update_at': 1 } }
+          { $sort: { 'create_at': 1 } }
         ],
         as: 'rows'
       } },

@@ -4,6 +4,12 @@ const Schema = mongoose.Schema
 
 // actions
 // 1. Create Table: create a new table
+// 2. Change Cell Value: edit cell
+// 3. Change Column Name: rename column
+// 4. Create Column: create a new column
+// 5. Create Row: create a new row
+// 6. Delete Column
+// 7. Delete Row
 
 const historySchema = new Schema({
   project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
