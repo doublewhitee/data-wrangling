@@ -148,24 +148,24 @@ const Dataset: React.FC<datasetProps> = props => {
       >
         <List dense>
           <ListItem button>
-            <ListItemText primary="Rename Dataset" onClick={handleClickRename} />
+            <ListItemText primary="Rename dataset" onClick={handleClickRename} />
           </ListItem>
           <Divider />
           <ListItem button>
             <ListItemText primary="Unoin" />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Inner Join" />
+            <ListItemText primary="Inner join" />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Outer Join" />
+            <ListItemText primary="Outer join" />
           </ListItem>
           <Divider />
           <ListItem button>
-            <ListItemText primary="Split By Columns" />
+            <ListItemText primary="Split by columns" />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Split By Rows" />
+            <ListItemText primary="Split by rows" />
           </ListItem>
           <Divider />
           <ListItem button>

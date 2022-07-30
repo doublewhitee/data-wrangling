@@ -1,0 +1,15 @@
+.filterCell {
+  line-height: 35px;
+}
+
+.filterCell p {
+  padding-block: 0;
+}
+
+.filterCell input {
+  width: 100%;
+}
+
+.filterCell div:first-child {
+  border-block-end: 1px solid var(--rdg-border-color);
+}

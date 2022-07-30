@@ -1,23 +1,52 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import clsx from 'clsx';
 
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
 
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import CloseIcon from '@material-ui/icons/Close';
 
+import { reqDatasetDetail } from '../../api/dataset';
+import { reqHistoryList } from '../../api/history';
+import message from '../../components/Message';
 import Table from './Table';
+import History from './History';
 
-const drawerWidth = 320;
+interface datasetInfo {
+  _id: string,
+  name: string,
+  project: string,
+  columns: {
+    _id: string,
+    name: string,
+    datatype: string
+  }[],
+  rows: {
+    row: object,
+    _id: string
+  }[]
+}
 
-const useStyles = makeStyles((theme) => ({
+interface history {
+  _id: string,
+  type: string,
+  action: string,
+  comment: string
+}
+
+const drawerWidth = 320
+
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     display: 'flex',
   },
@@ -56,7 +85,12 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 0,
   },
   drawerPaper: {
-    top: theme.spacing(8),
+    [theme.breakpoints.down('sm')]: {
+      top: theme.spacing(7),
+    },
+    [theme.breakpoints.up('sm')]: {
+      top: theme.spacing(8),
+    },
     width: drawerWidth,
     maxWidth: '100vw',
   },
@@ -90,21 +124,66 @@ const useStyles = makeStyles((theme) => ({
 
 const WorkSpace: React.FC = () => {
   const classes = useStyles()
-  const [isDrawerOpen, setIsDrawerOpen] = React.useState(true)
+  const navigate = useNavigate()
+  const params = useParams()
+  const [isDrawerOpen, setIsDrawerOpen] = useState(true)
+  // datasetInfo
+  const [datasetInfo, setDatasetInfo] = useState<datasetInfo>()
+  // active tab
+  const [tabValue, setTabValue] = useState('summary')
+  // history state
+  const [historyList, setHistoryList] = useState<history[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPage, setTotalPage] = useState(1)
 
-  // drawer
-  const handleDrawerOpen = () => {
-    setIsDrawerOpen(true)
+  useEffect(() => {
+    if (params.datasetId) {
+      handleReqDatasetDetail()
+    } else {
+      message.error('Params error!')
+    }
+  }, [params.datasetId])
+
+  useEffect(() => {
+    handleReqHistoryList()
+  }, [tabValue, currentPage])
+
+  // req dataset detail
+  const handleReqDatasetDetail = async () => {
+    const res = await reqDatasetDetail(params.datasetId!)
+    if (res && res.code === 200) {
+      setDatasetInfo(res.data)
+    } else {
+      navigate('/project', { replace: true })
+      message.error(res.message)
+    }
   }
 
-  const handleDrawerClose = () => {
-    setIsDrawerOpen(false)
+  // req history list
+  const handleReqHistoryList = async () => {
+    if (tabValue === 'history') {
+      const res = await reqHistoryList(params.datasetId!, currentPage)
+      if (res && res.code === 200) {
+        setHistoryList(res.data)
+        setTotalPage(Math.ceil(res.total / 10))
+      } else {
+        message.error(res.message)
+      }
+    }
+  }
+
+  // tab change
+  const handleTabChange = (event: React.ChangeEvent<{}>, newValue: string) => {
+    setTabValue(newValue)
   }
 
   // back to detail page
-  // todo
   const handleBack = () => {
-    console.log('back')
+    if (datasetInfo && datasetInfo.project) {
+      navigate(`/detail/${datasetInfo.project}`, { replace: true })
+    } else {
+      navigate('/project', { replace: true })
+    }
   }
 
   return (
@@ -120,14 +199,14 @@ const WorkSpace: React.FC = () => {
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            onClick={handleDrawerOpen}
+            onClick={() => setIsDrawerOpen(true)}
             edge="start"
             className={clsx(classes.menuButton, isDrawerOpen && classes.hide)}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap className={classes.title}>
-            Dataset Name
+            {datasetInfo && datasetInfo.name ? datasetInfo.name : 'Dataset Name'}
           </Typography>
           <IconButton color="inherit" onClick={handleBack}>
             <CloseIcon />
@@ -145,12 +224,25 @@ const WorkSpace: React.FC = () => {
         }}
       >
         <div className={classes.drawerHeader}>
-          <IconButton onClick={handleDrawerClose}>
+          <IconButton onClick={() => setIsDrawerOpen(false)}>
             <ChevronLeftIcon />
           </IconButton>
         </div>
         <Divider />
-        content
+        <Tabs value={tabValue} onChange={handleTabChange} indicatorColor="primary">
+          <Tab label="Column Info" value="summary" />
+          <Tab label="History" value="history" />
+        </Tabs>
+        {/* todo */}
+        {
+          tabValue === 'summary' ? '' :
+          <History
+            historyList={historyList}
+            currentPage={currentPage}
+            totalPage={totalPage}
+            setCurrentPage={setCurrentPage}
+          />
+        }
       </Drawer>
 
       <div
@@ -158,7 +250,14 @@ const WorkSpace: React.FC = () => {
           [classes.contentShift]: isDrawerOpen,
         })}
       >
-        <Table />
+        <Table
+          projectId={datasetInfo ? datasetInfo.project : ''}
+          datasetId={datasetInfo ? datasetInfo._id : ''}
+          columns={datasetInfo ? datasetInfo.columns : []}
+          rows={datasetInfo ? datasetInfo.rows : []}
+          onChangeSuccess={handleReqHistoryList}
+          onRefresh={handleReqDatasetDetail}
+        />
       </div>
     </div>
   );
