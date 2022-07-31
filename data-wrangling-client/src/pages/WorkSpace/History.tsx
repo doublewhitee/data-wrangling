@@ -53,7 +53,7 @@ const History: React.FC<historyProps> = props => {
       <List className={classes.list}>
         {
           historyList.map(item => (
-            <ListItem button id={item._id}>
+            <ListItem button id={item._id} key={item._id}>
               <ListItemText
                 primary={item.action}
                 // secondary={item.comment}

@@ -41,4 +41,13 @@ router.post('/deletecol', single_table_controller.deletecol)
 // delete row
 router.post('/deleterow', single_table_controller.deleterow)
 
+// combine col
+router.post('/combinecol', single_table_controller.combinecol)
+
+// combine row
+router.post('/combinerow', single_table_controller.combinerow)
+
+// separate columns
+router.post('/splitcol', single_table_controller.splitcol)
+
 module.exports = router

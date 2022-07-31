@@ -10,6 +10,9 @@ const Schema = mongoose.Schema
 // 5. Create Row: create a new row
 // 6. Delete Column
 // 7. Delete Row
+// 8. Combine Row
+// 9. Combine Column
+// 10. Separate Column
 
 const historySchema = new Schema({
   project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },

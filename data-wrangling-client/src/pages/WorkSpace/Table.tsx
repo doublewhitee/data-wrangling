@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DataGrid, { TextEditor, SelectColumn, Row } from 'react-data-grid';
 import './Table.css'
 
@@ -18,6 +18,11 @@ import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
+import Select from '@material-ui/core/Select';
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormControl from '@material-ui/core/FormControl';
 import { Menu, useContextMenu } from 'react-contexify';
 import 'react-contexify/dist/ReactContexify.css';
 
@@ -26,7 +31,17 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import { useAppSelector } from '../../redux/hooks';
 import message from '../../components/Message';
 import Confirm from '../../components/Confirm';
-import { reqEditCell, reqRenameCol, reqAddCol, reqDeleteCol, reqAddRow, reqDeleteRow } from '../../api/dataset';
+import {
+  reqEditCell,
+  reqRenameCol,
+  reqAddCol,
+  reqDeleteCol,
+  reqAddRow,
+  reqDeleteRow,
+  reqCombineRow,
+  reqCombineCol,
+  reqSplitCol
+} from '../../api/dataset';
 
 interface tableProps {
   projectId: string,
@@ -91,7 +106,7 @@ const Table: React.FC<tableProps> = props => {
   const [rowList, setRowList] = useState<any>([])
   // current col & row
   const [currentCol, setCurrentCol] = useState<any>({})
-  const [currentRow, setCUrrentRow] = useState<any>({})
+  const [currentRow, setCurrentRow] = useState<any>({})
   // loading backdrop
   const [open, setOpen] = useState(false)
   // column popover
@@ -101,13 +116,20 @@ const Table: React.FC<tableProps> = props => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [dialogTitle, setDialogTitle] = useState('')
   const [dialogText, setDialogText] = useState('')
-  const [columnNameInput, setColumnNameInput] = useState('')
-  const [columnNameState, setColumnNameState] = useState({ error: false, helperText: '' })
+  const [inputTitle, setInputTitle] = useState('')
+  const [columnInput, setColumnInput] = useState('')
+  const [inputState, setInputState] = useState({ error: false, helperText: '' })
+  // select col in dialog
+  const [selectedCol, setSelectedCol] = useState('')
+  const [selectColState, setSelectColState] = useState({ error: false, helperText: '' })
   // confirm
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [confirmType, setConfrimType] = useState('')
+  const [confirmText, setConfirmText] = useState('')
   // select rows
   const [selectedRows, setSelectedRows] = useState<ReadonlySet<string>>(() => new Set())
+  // filter
+  const [filters, setFilters] = useState<{ [key: string]: string }>({})
 
   useEffect(() => {
     setColList(createColumns)
@@ -141,7 +163,13 @@ const Table: React.FC<tableProps> = props => {
               </Grid>
             </Grid>
             <div>
-              <input type="text" />
+              <input
+                type="text"
+                value={filters[i._id]}
+                onChange={(e) =>
+                  setFilters(val => ({ ...val, [i._id]: e.target.value }))
+                }
+              />
             </div>
           </>
         )
@@ -158,21 +186,59 @@ const Table: React.FC<tableProps> = props => {
     return rowlist
   }
 
+  const filteredRows = useMemo(() => {
+    return rowList.filter((r: any) => {
+      let flag = true
+      columns.forEach(col => {
+        if (r[col._id] && filters[col._id]) {
+          if (!r[col._id].toString().includes(filters[col._id])) {
+            flag = false
+          }
+        } else if (!r[col._id] && filters[col._id] && filters[col._id] !== '') {
+          flag = false
+        }
+      })
+      if (flag) return r
+    })
+  }, [rowList, filters])
+
   const dialogContent = () => {
-    if (dialogTitle === 'Rename Column' || dialogTitle === 'Add Column to the Left' || dialogTitle === 'Add Column to the Right') {
+    if (dialogTitle === 'Rename Column' || dialogTitle === 'Add Column to the Left' ||
+    dialogTitle === 'Add Column to the Right' || dialogTitle === 'Separate Column') {
       return (
         <TextField
           variant="outlined"
           margin="normal"
           required
           fullWidth
-          label="Column Name"
-          error={columnNameState.error}
-          helperText={columnNameState.helperText}
-          onChange={handleChangeColName}
-          onBlur={handleValidColName}
-          value={columnNameInput}
+          label={inputTitle}
+          error={inputState.error}
+          helperText={inputState.helperText}
+          onChange={handleChangeColInput}
+          onBlur={handleValidColInput}
+          value={columnInput}
         />
+      )
+    } else if (dialogTitle === 'Combine Columns') {
+      return (
+        <FormControl variant="outlined" fullWidth error={selectColState.error}>
+          <InputLabel>Column Name</InputLabel>
+          <Select
+            value={selectedCol}
+            onChange={handleChangeColSelect}
+            label="Column Name"
+          >
+            {
+              columns.map(col => {
+                if (currentCol && col._id !== currentCol._id) {
+                  return (<MenuItem value={col._id}>{col.name}</MenuItem>)
+                }
+                return null
+              })
+            }
+          </Select>
+          <FormHelperText>{selectColState.helperText}</FormHelperText>
+        </FormControl>
       )
     }
   }
@@ -191,8 +257,8 @@ const Table: React.FC<tableProps> = props => {
     delete row._id
     const res = await reqEditCell(userId, projectId, datasetId, _id, row)
     if (res && res.code === 200) {
-      setRowList(rows)
       onChangeSuccess()
+      onRefresh()
     } else {
       message.error(res.message)
     }
@@ -201,7 +267,7 @@ const Table: React.FC<tableProps> = props => {
 
   // right click rows
   const handleContextMenu = (e: React.MouseEvent, row: any) => {
-    setCUrrentRow(row)
+    setCurrentRow(row)
     show(e)
   }
 
@@ -211,33 +277,51 @@ const Table: React.FC<tableProps> = props => {
     if (type === 'rename') {
       setDialogTitle('Rename Column')
       setDialogText('Please enter a column name.')
-      setColumnNameInput(currentCol.name)
-      setColumnNameState({ error: false, helperText: '' })
+      setInputTitle('Column Name')
+      setColumnInput(currentCol.name)
+      setInputState({ error: false, helperText: '' })
     } else if (type === 'add left') {
       setDialogTitle('Add Column to the Left')
       setDialogText('Please enter a column name.')
-      setColumnNameInput('')
-      setColumnNameState({ error: false, helperText: '' })
+      setInputTitle('Column Name')
+      setColumnInput('')
+      setInputState({ error: false, helperText: '' })
     } else if (type === 'add right') {
       setDialogTitle('Add Column to the Right')
       setDialogText('Please enter a column name.')
-      setColumnNameInput('')
-      setColumnNameState({ error: false, helperText: '' })
+      setInputTitle('Column Name')
+      setColumnInput('')
+      setInputState({ error: false, helperText: '' })
+    } else if (type === 'combine col') {
+      setDialogTitle('Combine Columns')
+      setDialogText('Please select a column to combine.')
+      setSelectedCol('')
+      setSelectColState({ error: false, helperText: '' })
+    } else if (type === 'split col') {
+      setDialogTitle('Separate Column')
+      setDialogText('Please enter a delimiter.')
+      setInputTitle('Delimiter')
+      setColumnInput('')
+      setInputState({ error: false, helperText: '' })
     }
     setIsDialogOpen(true)
   }
 
   // col name input
-  const handleChangeColName = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setColumnNameInput(event.target.value)
-    if (columnNameState.error && event.target.value.length > 0) {
-      setColumnNameState({ error: false, helperText: '' })
+  const handleChangeColInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setColumnInput(event.target.value)
+    if (inputState.error && event.target.value.length > 0) {
+      setInputState({ error: false, helperText: '' })
     }
   }
 
-  const handleValidColName = () => {
-    if (columnNameInput.trim().length === 0) {
-      setColumnNameState({ error: true, helperText: 'Column name is required.' })
+  const handleValidColInput = () => {
+    if (columnInput.trim().length === 0) {
+      if (dialogTitle !== 'Separate Column') {
+        setInputState({ error: true, helperText: 'Column name is required.' })
+      } else {
+        setInputState({ error: true, helperText: 'Delimiter is required.' })
+      }
       return false
     }
     return true
@@ -248,20 +332,28 @@ const Table: React.FC<tableProps> = props => {
     let res = undefined
     setOpen(true)
     if (dialogTitle === 'Rename Column' || dialogTitle === 'Add Column to the Left' || dialogTitle === 'Add Column to the Right') {
-      if (handleValidColName()) {
+      if (handleValidColInput()) {
         if (dialogTitle === 'Rename Column') {
-          res = await reqRenameCol(userId, projectId, datasetId, currentCol._id, currentCol.name, columnNameInput)
+          res = await reqRenameCol(userId, projectId, datasetId, currentCol._id, currentCol.name, columnInput)
         } else {
           const dir = dialogTitle === 'Add Column to the Left' ? 'left' : 'right'
-          res = await reqAddCol(userId, projectId, datasetId, currentCol._id, dir, columnNameInput)
+          res = await reqAddCol(userId, projectId, datasetId, currentCol._id, dir, columnInput)
         }
+      }
+    } else if (dialogTitle === 'Combine Columns') {
+      if (handleValidColSelect()) {
+        res = await reqCombineCol(userId, projectId, datasetId, currentCol._id, selectedCol)
+      }
+    } else if (dialogTitle === 'Separate Column') {
+      if (handleValidColInput()) {
+        res = await reqSplitCol(userId, projectId, datasetId, currentCol._id, columnInput)
       }
     }
     if (res && res.code === 200) {
       setIsDialogOpen(false)
       onChangeSuccess()
       onRefresh()
-    } else {
+    } else if (res) {
       message.error(res.message)
     }
     setOpen(false)
@@ -291,9 +383,18 @@ const Table: React.FC<tableProps> = props => {
     setAnchorColPopoverEl(null)
     setIsConfirmOpen(true)
     setConfrimType(type)
+    if (type === 'col') {
+      setConfirmText('Are you sure to delete this col?')
+    } else if (type === 'row') {
+      setConfirmText('Are you sure to delete this row?')
+    } else if (type === 'multi row') {
+      setConfirmText('Are you sure to delete the selected rows?')
+    } else if (type === 'combine row') {
+      setConfirmText('Are you sure to combine the selected rows?')
+    }
   }
 
-  const handleConfirmDelete = async () => {
+  const handleConfirm = async () => {
     let res = undefined
     setOpen(true)
     setIsConfirmOpen(false)
@@ -301,16 +402,33 @@ const Table: React.FC<tableProps> = props => {
       res = await reqDeleteCol(userId, projectId, datasetId, currentCol._id, currentCol.name)
     } else if (confirmType === 'row') {
       res = await reqDeleteRow(userId, projectId, datasetId, [currentRow._id])
-    } else {
+    } else if (confirmType === 'multi row') {
       res = await reqDeleteRow(userId, projectId, datasetId, Array.from(selectedRows))
+    } else if (confirmType === 'combine row') {
+      res = await reqCombineRow(userId, projectId, datasetId, Array.from(selectedRows))
     }
     if (res && res.code === 200) {
       onChangeSuccess()
       onRefresh()
-    } else {
+      setSelectedRows(() => new Set())
+    } else if (res) {
       message.error(res.message)
     }
     setOpen(false)
+  }
+
+  // column select
+  const handleChangeColSelect = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setSelectedCol(event.target.value as string)
+    setSelectColState({ error: false, helperText: '' })
+  }
+
+  const handleValidColSelect = () => {
+    if (selectedCol.trim().length === 0) {
+      setSelectColState({ error: true, helperText: 'Selected column is required.' })
+      return false
+    }
+    return true
   }
 
   return (
@@ -318,7 +436,7 @@ const Table: React.FC<tableProps> = props => {
       <DataGrid
         headerRowHeight={70}
         columns={colList}
-        rows={rowList}
+        rows={filteredRows}
         style={{ height: '100%' }}
         rowKeyGetter={(row: any) => row._id}
         onRowsChange={handleRowsChange}
@@ -364,10 +482,10 @@ const Table: React.FC<tableProps> = props => {
             <ListItemText primary="Transform column" />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Separate column" />
+            <ListItemText primary="Separate column" onClick={() => handleShowDialog('split col')} />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Combine columns" />
+            <ListItemText primary="Combine columns" onClick={() => handleShowDialog('combine col')} />
           </ListItem>
           <Divider />
           <ListItem button>
@@ -385,8 +503,8 @@ const Table: React.FC<tableProps> = props => {
           <ListItem button>
             <ListItemText primary="Transform row" />
           </ListItem>
-          <ListItem button disabled>
-            <ListItemText primary="Combine rows" />
+          <ListItem button disabled={selectedRows.size <= 1}>
+            <ListItemText primary="Combine rows" onClick={() => handleOpenConfirm('combine row')} />
           </ListItem>
           <Divider />
           <ListItem button>
@@ -422,10 +540,9 @@ const Table: React.FC<tableProps> = props => {
 
     <Confirm
       isDialogOpen={isConfirmOpen}
-      content={`Are you sure to delete ${confirmType === 'col' ?
-        'this col' : confirmType === 'row' ? 'this row' : 'the selected rows' }?`}
+      content={confirmText}
       handleClose={() => setIsConfirmOpen(false)}
-      handleConfirm={handleConfirmDelete}
+      handleConfirm={handleConfirm}
     />
     </div>
   );

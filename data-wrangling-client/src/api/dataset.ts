@@ -103,3 +103,30 @@ export function reqDeleteRow(user_id: string, project_id: string, dataset_id: st
     data: { user_id, project_id, dataset_id, row }
   }) as any
 }
+
+// combine row
+export function reqCombineRow(user_id: string, project_id: string, dataset_id: string, row: string[]) {
+  return request({
+    url: '/dataset/combinerow',
+    method: 'post',
+    data: { user_id, project_id, dataset_id, row }
+  }) as any
+}
+
+// combine col
+export function reqCombineCol(user_id: string, project_id: string, dataset_id: string, col_id: string, combineCol_id: string) {
+  return request({
+    url: '/dataset/combinecol',
+    method: 'post',
+    data: { user_id, project_id, dataset_id, col_id, combineCol_id }
+  }) as any
+}
+
+// split col
+export function reqSplitCol(user_id: string, project_id: string, dataset_id: string, col_id: string, delimiter: string) {
+  return request({
+    url: '/dataset/splitcol',
+    method: 'post',
+    data: { user_id, project_id, dataset_id, col_id, delimiter }
+  }) as any
+}
