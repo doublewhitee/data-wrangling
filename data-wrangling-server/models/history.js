@@ -13,6 +13,8 @@ const Schema = mongoose.Schema
 // 8. Combine Row
 // 9. Combine Column
 // 10. Separate Column
+// 11. Transform Row
+// 12. Transform Column
 
 const historySchema = new Schema({
   project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },

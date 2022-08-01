@@ -50,4 +50,10 @@ router.post('/combinerow', single_table_controller.combinerow)
 // separate columns
 router.post('/splitcol', single_table_controller.splitcol)
 
+// transform row
+router.post('/transformrow', single_table_controller.transformrow)
+
+// transform col
+router.post('/transformcol', single_table_controller.transformcol)
+
 module.exports = router

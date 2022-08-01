@@ -40,8 +40,12 @@ import {
   reqDeleteRow,
   reqCombineRow,
   reqCombineCol,
-  reqSplitCol
+  reqSplitCol,
+  reqTransformRow,
+  reqTransformCol
 } from '../../api/dataset';
+
+const Interpreter = require('js-interpreter');
 
 interface tableProps {
   projectId: string,
@@ -62,7 +66,7 @@ interface tableProps {
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     backdrop: {
-      zIndex: theme.zIndex.drawer + 1,
+      zIndex: theme.zIndex.drawer + 1000,
       color: '#fff',
     },
     colName: {
@@ -97,6 +101,7 @@ const Table: React.FC<tableProps> = props => {
   const { projectId, datasetId, columns, rows, onChangeSuccess, onRefresh } = props
   const classes = useStyles()
   const userId = useAppSelector((state) => state.user._id)
+  const inputRef = React.useRef() as React.MutableRefObject<HTMLInputElement>
   // context menu
   const { show } = useContextMenu({
     id: 'rowContextMenu',
@@ -138,6 +143,10 @@ const Table: React.FC<tableProps> = props => {
   useEffect(() => {
     setRowList(createRows)
   }, [rows])
+
+  useEffect(() => {
+    if (dialogTitle === 'Transform Row' && inputRef && inputRef.current) inputRef.current.focus()
+  }, [columnInput])
 
   const createColumns = () => {
     const cols = [
@@ -202,47 +211,6 @@ const Table: React.FC<tableProps> = props => {
     })
   }, [rowList, filters])
 
-  const dialogContent = () => {
-    if (dialogTitle === 'Rename Column' || dialogTitle === 'Add Column to the Left' ||
-    dialogTitle === 'Add Column to the Right' || dialogTitle === 'Separate Column') {
-      return (
-        <TextField
-          variant="outlined"
-          margin="normal"
-          required
-          fullWidth
-          label={inputTitle}
-          error={inputState.error}
-          helperText={inputState.helperText}
-          onChange={handleChangeColInput}
-          onBlur={handleValidColInput}
-          value={columnInput}
-        />
-      )
-    } else if (dialogTitle === 'Combine Columns') {
-      return (
-        <FormControl variant="outlined" fullWidth error={selectColState.error}>
-          <InputLabel>Column Name</InputLabel>
-          <Select
-            value={selectedCol}
-            onChange={handleChangeColSelect}
-            label="Column Name"
-          >
-            {
-              columns.map(col => {
-                if (currentCol && col._id !== currentCol._id) {
-                  return (<MenuItem value={col._id}>{col.name}</MenuItem>)
-                }
-                return null
-              })
-            }
-          </Select>
-          <FormHelperText>{selectColState.helperText}</FormHelperText>
-        </FormControl>
-      )
-    }
-  }
-
   // click col setting icon
   const handleClickColIcon = (event: React.MouseEvent<HTMLElement>, col: object) => {
     setAnchorColPopoverEl(event.currentTarget)
@@ -280,14 +248,8 @@ const Table: React.FC<tableProps> = props => {
       setInputTitle('Column Name')
       setColumnInput(currentCol.name)
       setInputState({ error: false, helperText: '' })
-    } else if (type === 'add left') {
-      setDialogTitle('Add Column to the Left')
-      setDialogText('Please enter a column name.')
-      setInputTitle('Column Name')
-      setColumnInput('')
-      setInputState({ error: false, helperText: '' })
-    } else if (type === 'add right') {
-      setDialogTitle('Add Column to the Right')
+    } else if (type === 'add left' || type === 'add right') {
+      setDialogTitle(`Add Column to the ${type === 'add left' ? 'Left' : 'Right'}`)
       setDialogText('Please enter a column name.')
       setInputTitle('Column Name')
       setColumnInput('')
@@ -303,6 +265,12 @@ const Table: React.FC<tableProps> = props => {
       setInputTitle('Delimiter')
       setColumnInput('')
       setInputState({ error: false, helperText: '' })
+    } else if (type === 'transform col' || type === 'transform row') {
+      setDialogTitle(`Transform ${type === 'transform col' ? 'Column' : 'Row'}`)
+      setDialogText('Please enter a JavaScript expression.')
+      setInputTitle('Expression')
+      setColumnInput('val')
+      setInputState({ error: false, helperText: '' })
     }
     setIsDialogOpen(true)
   }
@@ -310,19 +278,37 @@ const Table: React.FC<tableProps> = props => {
   // col name input
   const handleChangeColInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     setColumnInput(event.target.value)
-    if (inputState.error && event.target.value.length > 0) {
-      setInputState({ error: false, helperText: '' })
+    if (dialogTitle === 'Transform Row' || dialogTitle === 'Transform Column') {
+      if (inputState.error && event.target.value.length > 0 && inputState.error && event.target.value.length < 26) {
+        if (!columnInput.includes('return') && !columnInput.includes('for') &&
+        !columnInput.includes('while') && !columnInput.includes('function')) {
+          setInputState({ error: false, helperText: '' })
+        }
+      }
+    } else {
+      if (inputState.error && event.target.value.length > 0) {
+        setInputState({ error: false, helperText: '' })
+      }
     }
   }
 
   const handleValidColInput = () => {
-    if (columnInput.trim().length === 0) {
-      if (dialogTitle !== 'Separate Column') {
-        setInputState({ error: true, helperText: 'Column name is required.' })
-      } else {
-        setInputState({ error: true, helperText: 'Delimiter is required.' })
+    if (dialogTitle === 'Transform Row' || dialogTitle === 'Transform Column') {
+      if (columnInput.trim().length === 0 || columnInput.trim().length > 25) {
+        setInputState({ error: true, helperText: 'Expression must be 0 - 25 characters.' })
+      } else if (columnInput.includes('return') || columnInput.includes('for') ||
+      columnInput.includes('while') || columnInput.includes('function')) {
+        setInputState({ error: true, helperText: 'Invalid expression.' })
       }
-      return false
+    } else {
+      if (columnInput.trim().length === 0) {
+        if (dialogTitle !== 'Separate Column') {
+          setInputState({ error: true, helperText: 'Column name is required.' })
+        } else {
+          setInputState({ error: true, helperText: 'Delimiter is required.' })
+        }
+        return false
+      }
     }
     return true
   }
@@ -347,6 +333,35 @@ const Table: React.FC<tableProps> = props => {
     } else if (dialogTitle === 'Separate Column') {
       if (handleValidColInput()) {
         res = await reqSplitCol(userId, projectId, datasetId, currentCol._id, columnInput)
+      }
+    } else if (dialogTitle === 'Transform Row') {
+      if (handleValidColInput()) {
+        try {
+          const rowInfo = { row: {} as { [key: string]: string }, _id: '' }
+          rowInfo._id = currentRow._id
+          Object.keys(currentRow).map(r => {
+            if (r !== '_id') {
+              rowInfo.row[r] = handleInterpret(currentRow[r], columnInput)
+            }
+            return null
+          })
+          res = await reqTransformRow(userId, projectId, datasetId, rowInfo._id, rowInfo.row)
+        } catch (e) {
+          message.error('Transform data error!')
+        }
+      }
+    }  else if (dialogTitle === 'Transform Column') {
+      if (handleValidColInput()) {
+        try {
+          const col_id = currentCol._id
+          const rows = [] as { _id: string, val: string }[]
+          rowList.forEach((r: any) => {
+            rows.push({ _id: r._id, val: handleInterpret(r[col_id], columnInput) })
+          })
+          res = await reqTransformCol(userId, projectId, datasetId, currentCol._id, rows)
+        } catch (e) {
+          message.error('Transform data error!')
+        }
       }
     }
     if (res && res.code === 200) {
@@ -431,6 +446,13 @@ const Table: React.FC<tableProps> = props => {
     return true
   }
 
+  // run expression in js-interpreter
+  const handleInterpret = (val: any, expression: string) => {
+    const myInterpreter = new Interpreter(`var val = "${val}"; ${expression};`)
+    myInterpreter.run()
+    return myInterpreter.value
+  }
+
   return (
     <div>
       <DataGrid
@@ -479,7 +501,7 @@ const Table: React.FC<tableProps> = props => {
           </ListItem>
           <Divider />
           <ListItem button>
-            <ListItemText primary="Transform column" />
+            <ListItemText primary="Transform column" onClick={() => handleShowDialog('transform col')} />
           </ListItem>
           <ListItem button>
             <ListItemText primary="Separate column" onClick={() => handleShowDialog('split col')} />
@@ -501,7 +523,7 @@ const Table: React.FC<tableProps> = props => {
           </ListItem>
           <Divider />
           <ListItem button>
-            <ListItemText primary="Transform row" />
+            <ListItemText primary="Transform row" onClick={() => handleShowDialog('transform row')} />
           </ListItem>
           <ListItem button disabled={selectedRows.size <= 1}>
             <ListItemText primary="Combine rows" onClick={() => handleOpenConfirm('combine row')} />
@@ -525,7 +547,44 @@ const Table: React.FC<tableProps> = props => {
         <Typography gutterBottom>
           {dialogText}
         </Typography>
-        {dialogContent()}
+        {dialogTitle === 'Combine Columns' ? 
+          (
+            <FormControl variant="outlined" fullWidth error={selectColState.error}>
+              <InputLabel>Column Name</InputLabel>
+              <Select
+                value={selectedCol}
+                onChange={handleChangeColSelect}
+                label="Column Name"
+              >
+                {
+                  columns.map(col => {
+                    if (currentCol && col._id !== currentCol._id) {
+                      return (<MenuItem value={col._id}>{col.name}</MenuItem>)
+                    }
+                    return null
+                  })
+                }
+              </Select>
+              <FormHelperText>{selectColState.helperText}</FormHelperText>
+            </FormControl>
+          ) :
+          (
+            <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              key={inputTitle}
+              label={inputTitle}
+              error={inputState.error}
+              helperText={inputState.helperText}
+              onChange={handleChangeColInput}
+              onBlur={handleValidColInput}
+              inputRef={inputRef}
+              value={columnInput}
+            />
+          )
+        }
       </DialogContent>
 
       <DialogActions>

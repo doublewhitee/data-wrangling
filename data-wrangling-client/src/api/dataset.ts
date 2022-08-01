@@ -130,3 +130,21 @@ export function reqSplitCol(user_id: string, project_id: string, dataset_id: str
     data: { user_id, project_id, dataset_id, col_id, delimiter }
   }) as any
 }
+
+// transform row
+export function reqTransformRow(user_id: string, project_id: string, dataset_id: string, row_id: string, row: object) {
+  return request({
+    url: '/dataset/transformrow',
+    method: 'post',
+    data: { user_id, project_id, dataset_id, row_id, row }
+  }) as any
+}
+
+// transform col
+export function reqTransformCol(user_id: string, project_id: string, dataset_id: string, col_id: string, row: object) {
+  return request({
+    url: '/dataset/transformcol',
+    method: 'post',
+    data: { user_id, project_id, dataset_id, col_id, row }
+  }) as any
+}

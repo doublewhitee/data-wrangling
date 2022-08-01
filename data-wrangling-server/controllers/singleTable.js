@@ -352,3 +352,57 @@ module.exports.splitcol = async (ctx) => {
     }
   }
 }
+
+// transform row
+module.exports.transformrow = async (ctx) => {
+  try {
+    const { user_id, project_id, dataset_id, row_id, row } = ctx.request.body
+    await RowModel.findByIdAndUpdate(row_id, { row, update_at: new Date() })
+    await HistoryModel.create({
+      project: project_id,
+      user: user_id,
+      dataset: dataset_id,
+      type: 'Transform',
+      action: 'Transform Row',
+    })
+    await DatasetModel.findByIdAndUpdate(dataset_id, { update_at: new Date() })
+    await ProjectModel.findByIdAndUpdate(project_id, { update_at: new Date() })
+    ctx.body = {
+      code: 200,
+      data: 'success!'
+    }
+  } catch (e) {
+    ctx.body = {
+      code: 500,
+      message: 'Request error!'
+    }
+  }
+}
+
+// transform column
+module.exports.transformcol = async (ctx) => {
+  try {
+    const { user_id, project_id, dataset_id, col_id, row } = ctx.request.body
+    row.map(async (r) => {
+      await RowModel.findByIdAndUpdate(r._id, { [`row.${col_id}`]: r.val, update_at: new Date() })
+    })
+    await HistoryModel.create({
+      project: project_id,
+      user: user_id,
+      dataset: dataset_id,
+      type: 'Transform',
+      action: 'Transform Column',
+    })
+    await DatasetModel.findByIdAndUpdate(dataset_id, { update_at: new Date() })
+    await ProjectModel.findByIdAndUpdate(project_id, { update_at: new Date() })
+    ctx.body = {
+      code: 200,
+      data: 'success!'
+    }
+  } catch (e) {
+    ctx.body = {
+      code: 500,
+      message: 'Request error!'
+    }
+  }
+}
