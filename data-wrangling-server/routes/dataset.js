@@ -2,6 +2,7 @@ const router = require('koa-router')()
 const koaBody = require('koa-body')({ multipart:true }) // parse files
 const dataset_controller = require('../controllers/dataset')
 const single_table_controller = require('../controllers/singleTable')
+const multi_table_controller = require('../controllers/multiTable')
 
 router.prefix('/dataset')
 
@@ -55,5 +56,14 @@ router.post('/transformrow', single_table_controller.transformrow)
 
 // transform col
 router.post('/transformcol', single_table_controller.transformcol)
+
+// union
+router.post('/union', multi_table_controller.union)
+
+// inner join
+router.post('/innerjoin', multi_table_controller.innerjoin)
+
+// outer join
+router.post('/outerjoin', multi_table_controller.outerjoin)
 
 module.exports = router

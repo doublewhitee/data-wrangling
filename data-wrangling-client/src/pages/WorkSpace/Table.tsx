@@ -549,7 +549,7 @@ const Table: React.FC<tableProps> = props => {
         </Typography>
         {dialogTitle === 'Combine Columns' ? 
           (
-            <FormControl variant="outlined" fullWidth error={selectColState.error}>
+            <FormControl variant="outlined" fullWidth error={selectColState.error} required>
               <InputLabel>Column Name</InputLabel>
               <Select
                 value={selectedCol}

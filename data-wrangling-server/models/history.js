@@ -15,6 +15,9 @@ const Schema = mongoose.Schema
 // 10. Separate Column
 // 11. Transform Row
 // 12. Transform Column
+// 13. Union
+// 14. Inner Join
+// 15. Outer Join
 
 const historySchema = new Schema({
   project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },

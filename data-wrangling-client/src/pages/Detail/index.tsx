@@ -27,6 +27,7 @@ import { reqDatasetList, reqCreateDataset, reqRenameDataset, reqDeleteDataset } 
 import Dataset from './Dataset';
 import UploadDialog from './UploadDialog';
 import DetailDialog from './DetailDialog';
+import UnionJoinDialog from './UnionJoinDialog';
 
 interface dataset {
   _id: string,
@@ -103,6 +104,9 @@ const Detail: React.FC = () => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   // detail dialog
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
+  // union & join dialog
+  const [isUnionJoinDialogOpen, setIsUnionJoinDialogOpen] = useState(false)
+  const [unionJoinTitle, setUnionJoinTitle] = useState('')
 
   useEffect(() => {
     if (params.projectId) {
@@ -206,6 +210,12 @@ const Detail: React.FC = () => {
     navigate(`/table/${dataset._id}`)
   }
 
+  // click union / join
+  const handleClickUnionJoin = (title: string) => {
+    setIsUnionJoinDialogOpen(true)
+    setUnionJoinTitle(title)
+  }
+
   return (
     <Container maxWidth="lg" className={classes.container}>
       <Grid container justifyContent="space-between" alignItems="center" className={classes.topBar}>
@@ -267,6 +277,7 @@ const Detail: React.FC = () => {
           handleDelete={handleDeleteDataset}
           handleClickActionArea={handleNavToTablePage}
           handleDetail={() => setIsDetailDialogOpen(true)}
+          handleUnionJoin={handleClickUnionJoin}
         /> :
         <Empty />
       }
@@ -316,6 +327,17 @@ const Detail: React.FC = () => {
         isDialogOpen={isDetailDialogOpen}
         handleClose={() => setIsDetailDialogOpen(false)}
         dataset={currentDataset}
+      />
+
+      <UnionJoinDialog
+        userId={user}
+        projectId={projectInfo._id}
+        datasetList={datasetList}
+        currentDataset={currentDataset}
+        title={unionJoinTitle}
+        isDialogOpen={isUnionJoinDialogOpen}
+        handleClose={() => setIsUnionJoinDialogOpen(false)}
+        handleRefresh={handleReqDatasetList}
       />
     </Container>
   );

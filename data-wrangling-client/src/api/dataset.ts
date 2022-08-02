@@ -148,3 +148,30 @@ export function reqTransformCol(user_id: string, project_id: string, dataset_id:
     data: { user_id, project_id, dataset_id, col_id, row }
   }) as any
 }
+
+// union
+export function reqUnion(user_id: string, project_id: string, left_dataset_id: string, right_dataset_id: string) {
+  return request({
+    url: '/dataset/union',
+    method: 'post',
+    data: { user_id, project_id, left_dataset_id, right_dataset_id }
+  }) as any
+}
+
+// Inner Join
+export function reqInnerJoin(user_id: string, project_id: string, left_dataset_id: string, right_dataset_id: string, left_col: string, right_col: string) {
+  return request({
+    url: '/dataset/innerjoin',
+    method: 'post',
+    data: { user_id, project_id, left_dataset_id, right_dataset_id, left_col, right_col }
+  }) as any
+}
+
+// Outer Join
+export function reqOuterJoin(user_id: string, project_id: string, left_dataset_id: string, right_dataset_id: string, left_col: string, right_col: string) {
+  return request({
+    url: '/dataset/outerjoin',
+    method: 'post',
+    data: { user_id, project_id, left_dataset_id, right_dataset_id, left_col, right_col }
+  }) as any
+}

@@ -44,6 +44,7 @@ interface datasetProps {
   handleRename: () => void,
   handleDelete: () => void,
   handleDetail: () => void,
+  handleUnionJoin: (title: string) => void,
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -70,7 +71,8 @@ const Dataset: React.FC<datasetProps> = props => {
     handleSetDataset,
     handleRename,
     handleDelete,
-    handleDetail
+    handleDetail,
+    handleUnionJoin
   } = props
   // popover state
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
@@ -94,6 +96,12 @@ const Dataset: React.FC<datasetProps> = props => {
     setAnchorEl(null)
     handleDelete()
     setIsDialogOpen(false)
+  }
+
+  // union
+  const handleClickUnionJoin = (title: string) => {
+    setAnchorEl(null)
+    handleUnionJoin(title)
   }
 
   return (
@@ -152,13 +160,13 @@ const Dataset: React.FC<datasetProps> = props => {
           </ListItem>
           <Divider />
           <ListItem button>
-            <ListItemText primary="Unoin" />
+            <ListItemText primary="Unoin" onClick={() => handleClickUnionJoin('Union')} />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Inner join" />
+            <ListItemText primary="Inner join" onClick={() => handleClickUnionJoin('Inner Join')} />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Outer join" />
+            <ListItemText primary="Outer join" onClick={() => handleClickUnionJoin('Outer Join')} />
           </ListItem>
           <Divider />
           <ListItem button>
