@@ -45,6 +45,7 @@ interface datasetProps {
   handleDelete: () => void,
   handleDetail: () => void,
   handleUnionJoin: (title: string) => void,
+  handleSeparate: (title: string) => void,
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -72,7 +73,8 @@ const Dataset: React.FC<datasetProps> = props => {
     handleRename,
     handleDelete,
     handleDetail,
-    handleUnionJoin
+    handleUnionJoin,
+    handleSeparate
   } = props
   // popover state
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
@@ -98,10 +100,16 @@ const Dataset: React.FC<datasetProps> = props => {
     setIsDialogOpen(false)
   }
 
-  // union
+  // union & join
   const handleClickUnionJoin = (title: string) => {
     setAnchorEl(null)
     handleUnionJoin(title)
+  }
+
+  // separate
+  const handleClickSeparate = (title: string) => {
+    setAnchorEl(null)
+    handleSeparate(title)
   }
 
   return (
@@ -170,10 +178,10 @@ const Dataset: React.FC<datasetProps> = props => {
           </ListItem>
           <Divider />
           <ListItem button>
-            <ListItemText primary="Split by columns" />
+            <ListItemText primary="Split by columns" onClick={() => handleClickSeparate('Split By Columns')} />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Split by rows" />
+            <ListItemText primary="Split by rows" onClick={() => handleClickSeparate('Split By Rows')} />
           </ListItem>
           <Divider />
           <ListItem button>

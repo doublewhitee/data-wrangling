@@ -66,4 +66,10 @@ router.post('/innerjoin', multi_table_controller.innerjoin)
 // outer join
 router.post('/outerjoin', multi_table_controller.outerjoin)
 
+// split table by columns
+router.post('/splitbycol', multi_table_controller.splitbycol)
+
+// split table by rows
+router.post('/splitbyrow', multi_table_controller.splitbyrow)
+
 module.exports = router

@@ -28,6 +28,7 @@ import Dataset from './Dataset';
 import UploadDialog from './UploadDialog';
 import DetailDialog from './DetailDialog';
 import UnionJoinDialog from './UnionJoinDialog';
+import SeparateDialog from './SeparateDialog';
 
 interface dataset {
   _id: string,
@@ -107,6 +108,9 @@ const Detail: React.FC = () => {
   // union & join dialog
   const [isUnionJoinDialogOpen, setIsUnionJoinDialogOpen] = useState(false)
   const [unionJoinTitle, setUnionJoinTitle] = useState('')
+  // separate dialog
+  const [isSeparateDialogOpen, setIsSeparateDialogOpen] = useState(false)
+  const [separateTitle, setSeparateTitle] = useState('')
 
   useEffect(() => {
     if (params.projectId) {
@@ -216,6 +220,12 @@ const Detail: React.FC = () => {
     setUnionJoinTitle(title)
   }
 
+  // click separate
+  const handleClickSeparate = (title: string) => {
+    setIsSeparateDialogOpen(true)
+    setSeparateTitle(title)
+  }
+
   return (
     <Container maxWidth="lg" className={classes.container}>
       <Grid container justifyContent="space-between" alignItems="center" className={classes.topBar}>
@@ -278,6 +288,7 @@ const Detail: React.FC = () => {
           handleClickActionArea={handleNavToTablePage}
           handleDetail={() => setIsDetailDialogOpen(true)}
           handleUnionJoin={handleClickUnionJoin}
+          handleSeparate={handleClickSeparate}
         /> :
         <Empty />
       }
@@ -337,6 +348,16 @@ const Detail: React.FC = () => {
         title={unionJoinTitle}
         isDialogOpen={isUnionJoinDialogOpen}
         handleClose={() => setIsUnionJoinDialogOpen(false)}
+        handleRefresh={handleReqDatasetList}
+      />
+
+      <SeparateDialog
+        userId={user}
+        projectId={projectInfo._id}
+        currentDataset={currentDataset}
+        title={separateTitle}
+        isDialogOpen={isSeparateDialogOpen}
+        handleClose={() => setIsSeparateDialogOpen(false)}
         handleRefresh={handleReqDatasetList}
       />
     </Container>

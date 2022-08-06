@@ -217,7 +217,7 @@ const UnionJoinDialog: React.FC<unionJoinProps> = props => {
           title === 'Union' ?
           (
             <>
-            <Typography gutterBottom>Please select a dataset to union.</Typography>
+              <Typography gutterBottom>Please select a dataset to union.</Typography>
               <FormControl variant="outlined" fullWidth error={selectState.dataset.error} required>
                 <InputLabel>Dataset Name</InputLabel>
                 <Select

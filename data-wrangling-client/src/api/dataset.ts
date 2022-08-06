@@ -175,3 +175,21 @@ export function reqOuterJoin(user_id: string, project_id: string, left_dataset_i
     data: { user_id, project_id, left_dataset_id, right_dataset_id, left_col, right_col }
   }) as any
 }
+
+// Split Table by Columns
+export function reqSplitByCol(user_id: string, project_id: string, dataset_id: string, cols: object[]) {
+  return request({
+    url: '/dataset/splitbycol',
+    method: 'post',
+    data: { user_id, project_id, dataset_id, cols }
+  }) as any
+}
+
+// Split Table by Rows
+export function reqSplitByRow(user_id: string, project_id: string, dataset_id: string, col_id: string) {
+  return request({
+    url: '/dataset/splitbyrow',
+    method: 'post',
+    data: { user_id, project_id, dataset_id, col_id }
+  }) as any
+}

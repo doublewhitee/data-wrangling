@@ -76,6 +76,7 @@ module.exports.import = async (ctx) => {
         code: 501,
         data: 'File format not supported!'
       }
+      return
     } else if (format === 'csv') {
       const reader = fs.createReadStream(file.filepath)
       const rows = []

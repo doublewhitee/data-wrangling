@@ -173,6 +173,7 @@ module.exports.deleterow = async (ctx) => {
         code: 501,
         message: 'No row is selected!'
       }
+      return
     }
     await RowModel.deleteMany({ _id: { $in: row } })
     await DatasetModel.findByIdAndUpdate(dataset_id, { update_at: new Date() })
@@ -206,6 +207,7 @@ module.exports.combinerow = async (ctx) => {
         code: 501,
         message: 'More than one row should be selected!'
       }
+      return
     }
     const rows = await RowModel.find({ _id: { $in: row } })
     const updaterow = {}
@@ -296,6 +298,7 @@ module.exports.splitcol = async (ctx) => {
         code: 501,
         message: 'Request dataset error!'
       }
+      return
     }
     const columns = dataset[0].columns
     let idx = 0
