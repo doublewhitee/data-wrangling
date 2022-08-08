@@ -12,6 +12,10 @@ import IconButton from '@material-ui/core/IconButton';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Button from '@material-ui/core/Button';
+import Popover from '@material-ui/core/Popover';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
 
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
@@ -22,6 +26,7 @@ import { reqHistoryList } from '../../api/history';
 import message from '../../components/Message';
 import Table from './Table';
 import History from './History';
+import Summary from './Summary';
 
 interface datasetInfo {
   _id: string,
@@ -136,6 +141,15 @@ const WorkSpace: React.FC = () => {
   const [historyList, setHistoryList] = useState<history[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPage, setTotalPage] = useState(1)
+  // summary state
+  const [currentCol, setCurrentCol] = useState({
+    _id: '',
+    name: '',
+    datatype: ''
+  })
+  // popover state
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const popoverOpen = Boolean(anchorEl)
 
   useEffect(() => {
     if (params.datasetId) {
@@ -187,6 +201,11 @@ const WorkSpace: React.FC = () => {
     }
   }
 
+  // click export button, show popover
+  const handleClickExportBtn = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
   return (
     <div className={classes.root}>
       <AppBar
@@ -209,7 +228,7 @@ const WorkSpace: React.FC = () => {
           <Typography variant="h6" noWrap className={classes.title}>
             {datasetInfo && datasetInfo.name ? datasetInfo.name : 'Dataset Name'}
           </Typography>
-          <Button variant="outlined" color="primary">
+          <Button variant="outlined" color="primary" onClick={handleClickExportBtn}>
             Export
           </Button>
           <IconButton color="inherit" onClick={handleBack}>
@@ -237,9 +256,12 @@ const WorkSpace: React.FC = () => {
           <Tab label="Column Info" value="summary" />
           <Tab label="History" value="history" />
         </Tabs>
-        {/* todo */}
         {
-          tabValue === 'summary' ? '' :
+          tabValue === 'summary' ?
+          <Summary
+            currentColumn={currentCol}
+            rows={datasetInfo ? datasetInfo.rows : []}
+          /> :
           <History
             historyList={historyList}
             currentPage={currentPage}
@@ -259,10 +281,37 @@ const WorkSpace: React.FC = () => {
           datasetId={datasetInfo ? datasetInfo._id : ''}
           columns={datasetInfo ? datasetInfo.columns : []}
           rows={datasetInfo ? datasetInfo.rows : []}
+          setDetailCol={setCurrentCol}
           onChangeSuccess={handleReqHistoryList}
           onRefresh={handleReqDatasetDetail}
         />
       </div>
+
+      <Popover
+        open={popoverOpen}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+      >
+        <List dense>
+          <ListItem button>
+            <ListItemText primary="CSV" />
+          </ListItem>
+          <ListItem button>
+            <ListItemText primary="XLSX" />
+          </ListItem>
+          <ListItem button>
+            <ListItemText primary="JSON" />
+          </ListItem>
+        </List>
+      </Popover>
     </div>
   );
 };

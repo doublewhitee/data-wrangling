@@ -60,7 +60,8 @@ interface tableProps {
     _id: string,
   }[],
   onChangeSuccess: () => void,
-  onRefresh: () => void
+  onRefresh: () => void,
+  setDetailCol: React.Dispatch<React.SetStateAction<{ _id: string; name: string; datatype: string; }>>
 }
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -98,7 +99,7 @@ const RowRenderer = (props: any) => {
 }
 
 const Table: React.FC<tableProps> = props => {
-  const { projectId, datasetId, columns, rows, onChangeSuccess, onRefresh } = props
+  const { projectId, datasetId, columns, rows, onChangeSuccess, onRefresh, setDetailCol } = props
   const classes = useStyles()
   const userId = useAppSelector((state) => state.user._id)
   const inputRef = React.useRef() as React.MutableRefObject<HTMLInputElement>
@@ -490,7 +491,10 @@ const Table: React.FC<tableProps> = props => {
             <ListItemText primary="Rename column" onClick={() => handleShowDialog('rename')} />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="Column detail" />
+            <ListItemText primary="Column detail" onClick={() => {
+              setDetailCol(currentCol)
+              setAnchorColPopoverEl(null)
+            }}/>
           </ListItem>
           <Divider />
           <ListItem button>

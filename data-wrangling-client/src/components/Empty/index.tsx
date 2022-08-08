@@ -6,6 +6,10 @@ import Typography from '@material-ui/core/Typography';
 
 import FolderOpenIcon from '@material-ui/icons/FolderOpen';
 
+interface emptyProps {
+  content?: string
+}
+
 const useStyles = makeStyles((theme) => ({
   container: {
     width: '100%',
@@ -20,8 +24,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Empty: React.FC = () => {
+const Empty: React.FC<emptyProps> = props => {
   const classes = useStyles()
+  const { content } = props
 
   return (
     <Grid container className={classes.container}>
@@ -30,11 +35,15 @@ const Empty: React.FC = () => {
       </Grid>
       <Grid item xs={12}>
         <Typography variant="subtitle1" gutterBottom className={classes.text}>
-          No data here.
+          {content}
         </Typography>
       </Grid>
     </Grid>
   );
 };
+
+Empty.defaultProps = {
+  content: 'No data here.'
+}
 
 export default Empty;
