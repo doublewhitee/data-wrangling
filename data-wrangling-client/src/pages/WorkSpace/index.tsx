@@ -23,6 +23,7 @@ import CloseIcon from '@material-ui/icons/Close';
 
 import { reqDatasetDetail } from '../../api/dataset';
 import { reqHistoryList } from '../../api/history';
+import { exportToCsv, exportToXlsx, exportToJson } from '../../utils/exportFile';
 import message from '../../components/Message';
 import Table from './Table';
 import History from './History';
@@ -206,6 +207,39 @@ const WorkSpace: React.FC = () => {
     setAnchorEl(event.currentTarget)
   }
 
+  // export file
+  const handleExport = async (format: string) => {
+    setAnchorEl(null)
+    // get data
+    const colsMap = {} as { [key: string]: string }
+    const nameMap = new Map<string, number>() // prevent duplicate column names
+    datasetInfo?.columns.forEach(c => {
+      if (nameMap.has(c.name)) {
+        nameMap.set(c.name, nameMap.get(c.name)! + 1)
+        colsMap[c._id] = c.name + nameMap.get(c.name)!.toString()
+      } else {
+        nameMap.set(c.name, 1)
+        colsMap[c._id] = c.name
+      }
+    })
+    const data = [] as { [key: string]: any }[]
+    datasetInfo?.rows.forEach(r => {
+      const temp = {} as { [key: string]: any }
+      const row = r.row as { [key: string]: any }
+      Object.keys(row).forEach(key => {
+        temp[colsMap[key]] = row[key]
+      })
+      data.push(temp)
+    })
+    if (format === 'csv') {
+      exportToCsv(Object.values(colsMap), data, `${datasetInfo!.name}.csv`)
+    } else if (format === 'xlsx') {
+      await exportToXlsx(data, `${datasetInfo!.name}.xlsx`)
+    } else if (format === 'json') {
+      exportToJson(data, `${datasetInfo!.name}.json`)
+    }
+  }
+
   return (
     <div className={classes.root}>
       <AppBar
@@ -302,13 +336,13 @@ const WorkSpace: React.FC = () => {
       >
         <List dense>
           <ListItem button>
-            <ListItemText primary="CSV" />
+            <ListItemText primary="CSV" onClick={() => handleExport('csv')} />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="XLSX" />
+            <ListItemText primary="XLSX" onClick={() => handleExport('xlsx')} />
           </ListItem>
           <ListItem button>
-            <ListItemText primary="JSON" />
+            <ListItemText primary="JSON" onClick={() => handleExport('json')} />
           </ListItem>
         </List>
       </Popover>
