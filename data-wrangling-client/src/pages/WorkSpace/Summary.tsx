@@ -52,11 +52,11 @@ const Summary: React.FC<summaryProps> = props => {
       const map = {} as { [key: string]: number }
       let empty = 0
       rows.forEach(r => {
-        if (r && r.row && r.row[currentColumn._id] && r.row[currentColumn._id].trim().length > 0) {
-          if (map[r.row[currentColumn._id].trim().toString()]) {
-            map[r.row[currentColumn._id].trim().toString()] += 1
+        if (r && r.row && r.row[currentColumn._id] && r.row[currentColumn._id].toString().trim().length > 0) {
+          if (map[r.row[currentColumn._id].toString().trim()]) {
+            map[r.row[currentColumn._id].toString().trim()] += 1
           } else {
-            map[r.row[currentColumn._id].trim().toString()] = 1
+            map[r.row[currentColumn._id].toString().trim()] = 1
           }
         } else {
           empty += 1

@@ -466,6 +466,9 @@ const Table: React.FC<tableProps> = props => {
         selectedRows={selectedRows}
         onSelectedRowsChange={setSelectedRows}
         components={{ rowRenderer: p => (<RowRenderer {...p} onClickContextMenu={handleContextMenu} />) }}
+        defaultColumnOptions={{
+          resizable: true
+        }}
       />
 
       <Backdrop className={classes.backdrop} open={open}>
